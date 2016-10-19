@@ -1,22 +1,26 @@
 // require prompt to use to make the game 
 var inquirer = require('inquirer');
+var isLetter = require('is-letter');
 //require the objects/exports you will use
 var game = require('./game.js');
 // var letter = require('./letter.js');
-var word = require('./word.js');
+var Word = require('./word.js');
 
-game = {
+var game = {
 	wordBank : game.game.wordList,// create or import a list of words
-	wordsWon : 0,// count of words Found
+	//wordsWon : 0,// count of words Found
 	guessesRemaining : 10, //per word
 	currentWrd : null, //the word object
-	startGame : function (wrd){
+	startGame : function (){
     //make sure the user has 10 guesses
     if(this.guessesRemaining === 10){
 		//get a random word from the array
     var randoNumber = Math.floor(Math.random() * this.wordBank.length);
 		//populate currentWrd (made from Word constructor function) object with letters
-    this.currentWrd = this.wordBank[randoNumber];
+    this.currentWrd = new Word(this.wordBank[randoNumber]);
+    this.currentWrd.getLets();
+    //displays empty word puzzle
+    console.log(this.currentWrd.wordRender());
 		this.keepPromptingUser();
   }else{
     this.resetGuessesRemaining();
@@ -28,39 +32,53 @@ game = {
     this.guessesRemaining = 10;	
 	},
 	keepPromptingUser : function(){
-		var self = this;
+		var that = this;
 
-		prompt.get(['guessLetter'], function(err, result) {
-		    // result is an object like this: { guessLetter: 'f' }
-		    //console.log(result);
-		    
-			  // console log the letetr you chose
+		inquirer.prompt([{
+      type: "input",
+      name: "lttrChosen",
+      message: "Pick a letter: ",
+      validate: function(value){
+        if(isLetter(value)){
+          return true;
+        } else{
+          return false;
+        }
+      }
+      }]).then(function(ans){
+        //takes in the answer the user input
+        var picked = ans.lttrChosen;
+        console.log('You picked: ' + picked);
+        //checks if the letter chosen was found in the currentWrd
+        var found = that.currentWrd.checkIfLetterFound(picked);
+        //if found returns 0, user didn't guess the right letter
+        if(found === 0){
+          console.log("You didn't guess the right letter.");
+          that.guessesRemaining--;
+          console.log('Guesses remaining: ' + that.guessesRemaining);
+          console.log(that.currentWrd.wordRender());
+        } else{
+          console.log("Yay you found the letter!");
+            if(that.currentWrd.didWeFindTheWord() === true){
+              //solved puzzle
+              console.log(that.currentWrd.wordRender());
+              console.log("You won.");
+            } else{
+                console.log('Guesses remaining: ' + that.guessesRemaining);
+                console.log(that.currentWrd.wordRender());
+            }
+        }
+        //if the guesses are more than 0 and the word hasn't been found yet, keep prompting user for letters.
+        if(that.guessesRemaining > 0 && that.currentWrd.found === false){
+          that.keepPromptingUser();
+        }//else if their guesses are 0, they lost the game
+        else if(that.guessesRemaining === 0){
+          console.log('You lose, champ!');
+          console.log('The word you were trying to get was: ' + that.currentWrd.wrd);
+        }
 
-		    //this checks if the letter was found and if it is then it sets that specific letter in the word to be found
-
-		    //if the user guessed incorrectly minus the number of guesses they have left
-				// and console.log if they were incorrect or correct
-		    	
-				//check if you win only when you are right
-        //end game
-			 
-		    
-		    // display the user how many guesses remaining
-			
-				// render the word 
-				
-				// display letters the user has guessed
-
-			  // if user has remaining guesses and Word isn't found
-			
-				// if user has no guesses left, show them the word and tell them they lost
-			
-				// else show the user word and rendered
-		    
 		});
 	}
-
-
-};
+}
 
 game.startGame();
